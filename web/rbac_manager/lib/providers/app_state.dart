@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:rbac_manager/models/application.dart';
 import 'package:rbac_manager/models/module.dart';
 import 'package:rbac_manager/models/user.dart';
+import 'package:rbac_manager/models/role.dart';
 
 class AppState extends ChangeNotifier {
   List<Application> _applications = [];
@@ -10,6 +11,22 @@ class AppState extends ChangeNotifier {
 
   List<User> _users = [];
   List<User> get users => _users;
+
+  List<Role> _roles = [];
+  List<Role> get roles => _roles;
+
+  void addRole(Role role) {
+    _roles.add(role);
+    notifyListeners();
+  }
+
+  void updateRole(Role role) {
+    final index = _roles.indexWhere((r) => r.id == role.id);
+    if (index != -1) {
+      _roles[index] = role;
+      notifyListeners();
+    }
+  }
 
   void addUser(User user) {
     _users.add(user);
@@ -42,6 +59,11 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  void deleteRole(String roleId) {
+    _roles.removeWhere((role) => role.id == roleId);
+    notifyListeners();
   }
 
   void addApplication(Application application) {
