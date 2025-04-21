@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rbac_manager/models/user.dart';
 import 'package:rbac_manager/providers/app_state.dart';
 import 'package:rbac_manager/screens/users/user_dialog.dart';
+import 'package:rbac_manager/screens/users/assign_roles_dialog.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -13,6 +14,14 @@ class UsersScreen extends StatefulWidget {
 
 class _UsersScreenState extends State<UsersScreen> {
   String _searchQuery = '';
+
+  String _getRoleSummary(User user, AppState appState) {
+    final userRoles = appState.roles
+        .where((role) => user.roleIds.contains(role.id))
+        .map((role) => role.name)
+        .join(', ');
+    return userRoles.isEmpty ? 'No roles assigned' : userRoles;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,30 +68,23 @@ class _UsersScreenState extends State<UsersScreen> {
             Expanded(
               child: Consumer<AppState>(
                 builder: (context, appState, child) {
-                  final filteredUsers =
-                      appState.users
-                          .where(
-                            (user) => user.fullName.toLowerCase().contains(
-                              _searchQuery,
-                            ),
-                          )
-                          .toList();
-
                   return DataTable(
                     columns: const [
                       DataColumn(label: Text('Id')),
                       DataColumn(label: Text('Full Name')),
                       DataColumn(label: Text('Email')),
+                      DataColumn(label: Text('Roles')),
                       DataColumn(label: Text('Status')),
                       DataColumn(label: Text('Actions')),
                     ],
                     rows:
-                        filteredUsers.map((user) {
+                        appState.users.map((user) {
                           return DataRow(
                             cells: [
                               DataCell(Text(user.id)),
                               DataCell(Text(user.fullName)),
                               DataCell(Text(user.email)),
+                              DataCell(Text(_getRoleSummary(user, appState))),
                               DataCell(
                                 Text(user.isActive ? 'Active' : 'Inactive'),
                               ),
@@ -92,9 +94,23 @@ class _UsersScreenState extends State<UsersScreen> {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.assignment_ind),
-                                      tooltip: 'Assign Role',
-                                      onPressed: () {
-                                        // TODO: Implement role assignment dialog
+                                      tooltip: 'Assign Roles',
+                                      onPressed: () async {
+                                        final updatedUser =
+                                            await showDialog<User>(
+                                              context: context,
+                                              builder:
+                                                  (context) =>
+                                                      AssignRolesDialog(
+                                                        user: user,
+                                                      ),
+                                            );
+                                        if (updatedUser != null) {
+                                          if (!context.mounted) return;
+                                          context.read<AppState>().updateUser(
+                                            updatedUser,
+                                          );
+                                        }
                                       },
                                     ),
                                     IconButton(
